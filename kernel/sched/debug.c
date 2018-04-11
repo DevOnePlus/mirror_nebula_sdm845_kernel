@@ -972,6 +972,7 @@ void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 	PN(se.exec_start);
 	PN(se.vruntime);
 	PN(se.sum_exec_runtime);
+	P(fsync_count);
 
 	nr_switches = p->nvcsw + p->nivcsw;
 

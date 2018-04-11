@@ -1968,29 +1968,50 @@ struct task_struct {
 #endif
 
 #ifdef CONFIG_NO_HZ_FULL
-	atomic_t tick_dep_mask;
+	atomic_t			tick_dep_mask;
 #endif
-	unsigned long nvcsw, nivcsw; /* context switch counts */
-	u64 start_time;		/* monotonic time in nsec */
-	u64 real_start_time;	/* boot based time in nsec */
-/* mm fault and swap info: this can arguably be seen as either mm-specific or thread-specific */
-	unsigned long min_flt, maj_flt;
+	/* Context switch counts: */
+	unsigned long			nvcsw;
+	unsigned long			nivcsw;
 
-	struct task_cputime cputime_expires;
-	struct list_head cpu_timers[3];
+	/* Monotonic time in nsecs: */
+	u64				start_time;
 
-/* process credentials */
-	const struct cred __rcu *ptracer_cred; /* Tracer's credentials at attach */
-	const struct cred __rcu *real_cred; /* objective and real subjective task
-					 * credentials (COW) */
-	const struct cred __rcu *cred;	/* effective (overridable) subjective task
-					 * credentials (COW) */
-	char comm[TASK_COMM_LEN]; /* executable name excluding path
-				     - access with [gs]et_task_comm (which lock
-				       it with task_lock())
-				     - initialized normally by setup_new_exec */
-/* file system info */
-	struct nameidata *nameidata;
+	/* Boot based time in nsecs: */
+	u64				real_start_time;
+
+	/* MM fault and swap info: this can arguably be seen as either mm-specific or thread-specific: */
+	unsigned long			min_flt;
+	unsigned long			maj_flt;
+
+#ifdef CONFIG_POSIX_TIMERS
+	struct task_cputime		cputime_expires;
+	struct list_head		cpu_timers[3];
+#endif
+	int fsync_count;
+
+	/* Process credentials: */
+
+	/* Tracer's credentials at attach: */
+	const struct cred __rcu		*ptracer_cred;
+
+	/* Objective and real subjective task credentials (COW): */
+	const struct cred __rcu		*real_cred;
+
+	/* Effective (overridable) subjective task credentials (COW): */
+	const struct cred __rcu		*cred;
+
+	/*
+	 * executable name, excluding path.
+	 *
+	 * - normally initialized setup_new_exec()
+	 * - access it with [gs]et_task_comm()
+	 * - lock it with task_lock()
+	 */
+	char				comm[TASK_COMM_LEN];
+
+	struct nameidata		*nameidata;
+
 #ifdef CONFIG_SYSVIPC
 /* ipc stuff */
 	struct sysv_sem sysvsem;
