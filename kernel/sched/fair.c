@@ -7040,6 +7040,9 @@ retry:
 			if (walt_cpu_high_irqload(i) || is_reserved(i))
 				continue;
 
+			if (walt_cpu_high_irqload(i) || is_reserved(i))
+				continue;
+
 			/*
 			 * p's blocked utilization is still accounted for on prev_cpu
 			 * so prev_cpu will receive a negative bias due to the double
