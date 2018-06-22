@@ -709,7 +709,6 @@ static inline void inter_cluster_migration_fixup
 static u32 load_to_index(u32 load)
 {
 	u32 index = load / sched_load_granule;
-
 	return min(index, (u32)(NUM_LOAD_INDICES - 1));
 }
 
