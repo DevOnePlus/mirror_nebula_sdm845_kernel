@@ -12,6 +12,8 @@
 #include <trace/events/sched.h>
 
 #include "walt.h"
+#include "tune.h"
+
 /* Curtis, 20180109, ux realm */
 #include <../drivers/oneplus/coretech/opchain/opchain_helper.h>
 
