@@ -649,7 +649,7 @@ function sftp_upload {
             ./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR}/TEST ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
 			else
 			echo "Release: Uploading To ${SFTP_REMOTE_DIR}"
-			./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR} ${SFTP_LOCAL_DIR}/${ZIP_FINISHED_DIR_NAME}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
+			./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR} ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
             fi
 		 fi
 }
