@@ -9,13 +9,18 @@
 ## |                                                                                               | ##
 ## | Current Device Setup: OnePlus 6/6T                                                            | ##
 ## |                                                                                               | ##
-## | v30.1                                                                                         | ##
+## | v30.5                                                                                         | ##
 ## |                                                                                               | ##
 ## | Updated: 11/28/2018: Rewrote a few vars for new paths and fixed signing keys.                 | ##
 ## | Updated: 12/16/2018: Added Clang Options (ON/OFF)                                             | ##
 ## | Updated: 12/19/2018: Fixed clean_all section.                                                 | ##
 ## | Updated: 12/24/2018: Changed How CCACHE is located and cleaned.                               | ##
 ## | Updated: 12/25/2018: Cleaning Modules Without Removing Custom Module.                         | ##
+## | Updated: 12/26/2018: Add SFTP access Control, Now you can Upload to SFTP.                     | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
 ## |                                                                                               | ##
 ## |                                                                                               | ##
 ## ------------------------------------------------------------------------------------------------- ##
@@ -96,6 +101,8 @@ export DTBTOOL=$DTBTOOL
 export CUSTOM_MODULE=$CUSTOM_MODULE
 #export ERROR_LOG=$ERROR_LOG
 export VARIANTS=$VARIANTS
+export USE_SFTP=$USE_SFTP
+export SFTP_TEST=$SFTP_TEST
 export DEBUG_BUILD=$DEBUG_BUILD
 export CLANG_BUILDS=$CLANG_BUILDS
 export CC=$CC
@@ -115,6 +122,8 @@ TOOLS_DIR="$TOOLS_DIR" >&2
 RAMDISK_DIR="$RAMDISK_DIR" >&2
 RAMDISK_DIR="$RAMDISK_DIR" >&2
 COMPRESSED_IMAGE_DIR="$COMPRESSED_IMAGE_DIR" >&2
+SFTP_LOCAL_DIR="$SFTP_LOCAL_DIR" >&2
+SFTP_REMOTE_DIR="$SFTP_REMOTE_DIR" >&2
 TOOLCHAIN_DIR="$TOOLCHAIN_DIR" >&2
 TC_NAME="$TC_NAME" >&2
 TC_PREFIX="$TC_PREFIX" >&2
@@ -633,6 +642,18 @@ function make_zip {
 		cd $KERNEL_DIR
 }
 
+function sftp_upload {
+         if [ "$USE_SFTP" == 1 ];then
+		    if [ "$SFTP_TEST" == 1 ];then   
+            echo "Development: Uploading To ${SFTP_REMOTE_DIR}/TEST"
+            ./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR}/TEST ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
+			else
+			echo "Release: Uploading To ${SFTP_REMOTE_DIR}"
+			./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR} ${SFTP_LOCAL_DIR}/${ZIP_FINISHED_DIR_NAME}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
+            fi
+		 fi
+}
+
 
 ## Finished Build Displayed in a Dialog nfo box ##
 function finished_build {
@@ -747,6 +768,7 @@ dialog --title "Build Kernel" \
 		make_modules
 		make_boot
 		make_zip
+		sftp_upload
 		finished_build;;
 	1) echo "File not deleted.";;
 	255) echo "[ESC] key pressed.";;
@@ -929,6 +951,7 @@ dialog --title "Build Kernel" \
 		make_modules
 		make_boot
 		make_zip
+		sftp_upload
 		finished_build;;
 	1) echo "File not deleted.";;
 	255) echo "[ESC] key pressed.";;
