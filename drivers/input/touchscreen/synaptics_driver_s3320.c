@@ -66,6 +66,9 @@
 #include "synaptics_baseline.h"
 #include "synaptics_dsx_core.h"
 #include <linux/oneplus/boot_mode.h>
+
+#include <linux/moduleparam.h>
+
 #define WAKE_GESTURES 		1
 #ifdef WAKE_GESTURES
 #define WAKE_GESTURE		0x0b
@@ -1655,6 +1658,8 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 	if((gesture == DouTap && DouTap_gesture)||(gesture == RightVee && RightVee_gesture)
         ||(gesture == LeftVee && LeftVee_gesture)||(gesture == UpVee && UpVee_gesture)
         ||(gesture == Circle && Circle_gesture)||(gesture == DouSwip && DouSwip_gesture)
+		||(gesture == Sgestrue && Sgestrue_gesture)||(gesture == Wgestrue && Wgestrue_gesture)
+		||(gesture == Mgestrue && Mgestrue_gesture)||(gesture == SingleTap && Single_gesture)
         ||(gesture == DownVee && DownVee_gesture)||(gesture == Left2RightSwip && Left2RightSwip_gesture)
         ||(gesture == Right2LeftSwip && Right2LeftSwip_gesture)||(gesture == Up2DownSwip && Up2DownSwip_gesture)
         ||(gesture == Down2UpSwip && Down2UpSwip_gesture)
