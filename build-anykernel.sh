@@ -9,9 +9,20 @@
 ## |                                                                                               | ##
 ## | Current Device Setup: OnePlus 6/6T                                                            | ##
 ## |                                                                                               | ##
-## |                                                                                               | ##
+## | v30.5                                                                                         | ##
 ## |                                                                                               | ##
 ## | Updated: 11/28/2018: Rewrote a few vars for new paths and fixed signing keys.                 | ##
+## | Updated: 12/16/2018: Added Clang Options (ON/OFF)                                             | ##
+## | Updated: 12/19/2018: Fixed clean_all section.                                                 | ##
+## | Updated: 12/24/2018: Changed How CCACHE is located and cleaned.                               | ##
+## | Updated: 12/25/2018: Cleaning Modules Without Removing Custom Module.                         | ##
+## | Updated: 12/26/2018: Add SFTP access Control, Now you can Upload to SFTP.                     | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
+## |                                                                                               | ##
 ## ------------------------------------------------------------------------------------------------- ##
 
 ## <<<< DONT EDIT ANYTHING BELOW THIS >>>> ##
@@ -87,8 +98,11 @@ export SIGNFILE_KEY_B=$SIGNFILE_KEY_B
 export USE_SCRIPTS=$USE_SCRIPTS
 export SPLIT_DTB=$SPLIT_DTB
 export DTBTOOL=$DTBTOOL
+export CUSTOM_MODULE=$CUSTOM_MODULE
 #export ERROR_LOG=$ERROR_LOG
 export VARIANTS=$VARIANTS
+export USE_SFTP=$USE_SFTP
+export SFTP_TEST=$SFTP_TEST
 export DEBUG_BUILD=$DEBUG_BUILD
 export CLANG_BUILDS=$CLANG_BUILDS
 export CC=$CC
@@ -108,6 +122,8 @@ TOOLS_DIR="$TOOLS_DIR" >&2
 RAMDISK_DIR="$RAMDISK_DIR" >&2
 RAMDISK_DIR="$RAMDISK_DIR" >&2
 COMPRESSED_IMAGE_DIR="$COMPRESSED_IMAGE_DIR" >&2
+SFTP_LOCAL_DIR="$SFTP_LOCAL_DIR" >&2
+SFTP_REMOTE_DIR="$SFTP_REMOTE_DIR" >&2
 TOOLCHAIN_DIR="$TOOLCHAIN_DIR" >&2
 TC_NAME="$TC_NAME" >&2
 TC_PREFIX="$TC_PREFIX" >&2
@@ -275,7 +291,14 @@ function TIME_END() {
 ## Clean everything that is left over ##
 function clean_all {
 		echo "Cleaning out $COMPRESSED_IMAGE_DIR"
+		if [ "$CUSTOM_MODULE" == "1" ]; then
+        cd $MODULES_DIR
+		echo "Cleaning Modules, But keeping Custom wlan:"
+		ls | grep -v wlan.ko | xargs rm
+		else
+		echo "Cleaning All Modules, No Custom Set:"
 		rm -rf $MODULES_DIR/*
+		fi
 		cd $COMPRESSED_IMAGE_DIR
 		rm -rf Image.gz-dtb
 		rm -rf $KERNEL
@@ -287,12 +310,14 @@ function clean_all {
 		rm -rf *.bak
 		rm -rf *.zip
 		cd $KERNEL_DIR
-		if [ -e "$OUTPUT_DIR" ]; then
+		echo "Cleaning Main Kernel ROOT Directory."
+		make clean && make mrproper
+		echo "Running Make Clean and Make MrProper in ${OUTPUT_DIR} Directory."
+		make O=${OUTPUT_DIR} clean && make O=${OUTPUT_DIR} mrproper
+        if [ -e "$OUTPUT_DIR" ]; then
 		echo "Deleting ${OUTPUT_DIR} Directory."
 		rm -rf $OUTPUT_DIR
 		fi
-		echo "Running Make Clean and Make MrProper"
-		make O=${OUTPUT_DIR} clean && make O=${OUTPUT_DIR} mrproper
 }
 
 function set_timestamp() {
@@ -380,6 +405,36 @@ case $retval in
 esac
 }
 
+## Logging options ##
+function use_clang {
+DIALOG=${DIALOG=dialog}
+tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
+trap "rm -f $tempfile" 0 1 2 5 15
+
+$DIALOG --backtitle "Clang Options" \
+	--title "Menu: Clang Options" --clear \
+        --radiolist "Clang ON/OFF" 20 61 5 \
+        "ON"  "Clang Turned ON" on \
+        "OFF" "Clang Turned OFF" off 2> $tempfile
+retval=$?
+
+choice=`cat $tempfile`
+case $retval in
+  0)
+	if [ "$choice" == "ON" ]; then
+	echo "CLANG ON TEST"
+	fi
+	if [ "$choice" == "OFF" ]; then
+	echo "Clang OFF TEST"
+	fi
+	_clang_on_off;;
+  1)
+    echo "Cancel pressed.";;
+  255)
+    echo "ESC pressed.";;
+esac
+}
+
 function SET_LOCALVERSION() {
 	if [ "$SET_LOCAL"  == 01 ]; then
 	echo "Local Version From ${DEFCONFIG} Has been Changed to the Following:"
@@ -427,7 +482,7 @@ while true
 do
 
 ### display main menu ###
-dialog --clear  --help-button --backtitle "Linux Shell Script Tutorial" \
+dialog --clear  --help-button --backtitle "Nebula Kernel" \
 --title "[ M A I N - M E N U ]" \
 --menu "You can use the UP/DOWN arrow keys, the first \\n\
 letter of the choice as a hot key, or the \\n\
@@ -587,6 +642,18 @@ function make_zip {
 		cd $KERNEL_DIR
 }
 
+function sftp_upload {
+         if [ "$USE_SFTP" == 1 ];then
+		    if [ "$SFTP_TEST" == 1 ];then   
+            echo "Development: Uploading To ${SFTP_REMOTE_DIR}/TEST"
+            ./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR}/TEST ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
+			else
+			echo "Release: Uploading To ${SFTP_REMOTE_DIR}"
+			./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR} ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
+            fi
+		 fi
+}
+
 
 ## Finished Build Displayed in a Dialog nfo box ##
 function finished_build {
@@ -635,15 +702,15 @@ choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
 for choice in $choices
 do
     case $choice in
-        1)	VARIANT="OnePlus6T"
+        1)	VARIANT="OnePlus6and6T"
 		DEFCONFIG="nebula_defconfig"
 		break;;
 
-        2)	VARIANT="OnePlus6T"
+        2)	VARIANT="OnePlus6and6T"
 		DEFCONFIG="nebula_defconfig"
 		break;;
 		
-        3)	VARIANT="OnePlus6T"
+        3)	VARIANT="OnePlus6and6T"
 		DEFCONFIG="nebula2_defconfig"
 		break;;
 	
@@ -682,7 +749,7 @@ esac
 
 ##  Build Kernel Y/N ##
 dialog --title "Build Kernel" \
-	--backtitle "Linux Shell Script Tutorial Example" \
+	--backtitle "Nebula Kernel Building Mode" \
 	--yesno "You are about to Build Kernel For $VARIANT, \\n\
 	Are you sure you want to build Kernel ?" 7 60
  
@@ -701,6 +768,7 @@ dialog --title "Build Kernel" \
 		make_modules
 		make_boot
 		make_zip
+		sftp_upload
 		finished_build;;
 	1) echo "File not deleted.";;
 	255) echo "[ESC] key pressed.";;
@@ -866,7 +934,7 @@ esac
 
 ##  Build Kernel Y/N ##
 dialog --title "Build Kernel" \
-	--backtitle "Linux Shell Script Tutorial Example" \
+	--backtitle "Nebula Kernel Building Mode" \
 	--yesno "You are about to Build Kernel For $VARIANT, \\n\
 	Are you sure you want to build Kernel ?" 7 60
  
@@ -883,6 +951,7 @@ dialog --title "Build Kernel" \
 		make_modules
 		make_boot
 		make_zip
+		sftp_upload
 		finished_build;;
 	1) echo "File not deleted.";;
 	255) echo "[ESC] key pressed.";;
@@ -951,7 +1020,8 @@ cmd=(dialog --keep-tite --menu "Select options:" 22 76 16)
 options=(1 "Change Clang: Current: ${CLANG_NAME}"
         2 "Change ToolChain: Current: ${TC_NAME}"
          3 "Change Destro Current: ${TC_DESTRO}"
-		 4 "Change Prefix")
+		 4 "Change Prefix"
+		 5 "Clang Options")
 
 choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
 
@@ -965,6 +1035,8 @@ do
 		3)  tc_changedestro
 			break;;
 		4) echo "Not Implanted yet"
+			break;;
+		5) use_clang
 			break;;
 		
     esac
@@ -1010,7 +1082,7 @@ case $menuitem in
 		Clean) clean_all ;;
 		TC) tc_menu ;;
 		Log) menu_log ;;
-		Ccache) echo "Clearing Ccache.."; rm -rf "${HOME}"/.ccache ;;
+		Ccache) echo "Clearing Ccache.."; rm -rf "${CCACHE_DIR}" ;;
 		Build_Zip) make_zip; exit;;
 		Settings) menu_settings ;;
 		Test) script_settings ; exit ;;
