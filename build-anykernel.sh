@@ -644,6 +644,7 @@ function make_zip {
 
 function sftp_upload {
          if [ "$USE_SFTP" == 1 ];then
+		    unset sftpStatus
 		    if [ "$SFTP_TEST" == 1 ];then   
             echo "Development: Uploading To ${SFTP_REMOTE_DIR}/TEST"
             ./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR}/TEST ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
@@ -651,6 +652,16 @@ function sftp_upload {
 			echo "Release: Uploading To ${SFTP_REMOTE_DIR}"
 			./upload-sftp.sh eliminater74@frs.sourceforge.net:${SFTP_REMOTE_DIR} ${SFTP_LOCAL_DIR}/${KNAME}_${REV}_${VARIANT}_${KVER}.zip
             fi
+			if [ "$sftpStatus" != "" ]
+               then
+			   echo "${RED}Upload failed!${RESTORE}"
+			   sftp_status="Failed"
+			   else
+			   echo "${BLUE}Upload complete.${RESTORE}"
+			   sftp_status="Complete"
+			fi
+			else
+			sftp_status="OFF"
 		 fi
 }
 
@@ -668,6 +679,7 @@ function finished_build {
 	--infobox "${KNAME}_${REV}_${VARIANT}_${KVER}.zip \\n\
 	Created Successfully..\\n\
 	FileSize: $actualsize kb \\n\
+	SFTP: $sftp_status \\n\
     Time: $TIME_LENGTH" 7 65 ; read 
 	else
 dialog --title  "Build Not Completed"  --backtitle  "Build Had Errors" \
